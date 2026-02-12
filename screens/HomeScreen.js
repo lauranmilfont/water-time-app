@@ -294,7 +294,11 @@ const styles = StyleSheet.create({
     marginBottom: 10
   },
   dropEmoji: {
+<<<<<<< HEAD
     fontSize: 50,
+=======
+    fontSize: 110,
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
     marginBottom: 8
   },
   heroTitleCenter: {

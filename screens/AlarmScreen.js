@@ -16,6 +16,7 @@ async function requestPermissionNative() {
   return status === 'granted'
 }
 
+<<<<<<< HEAD
 function parseTimeLabel(label) {
   const parts = label.split(':')
   if (parts.length !== 2) return null
@@ -27,6 +28,23 @@ function parseTimeLabel(label) {
   if (h < 0 || h > 23) return null
   if (m < 0 || m > 59) return null
 
+=======
+function parseIntervalLabel(label) {
+  const cleaned = label.replace(' (auto)', '').replace('min', '').trim()
+  const n = parseInt(cleaned)
+  if (!n || n <= 0) return null
+  return n
+}
+
+function parseTimeLabel(label) {
+  const parts = label.split(':')
+  if (parts.length !== 2) return null
+  const h = parseInt(parts[0])
+  const m = parseInt(parts[1])
+  if (Number.isNaN(h) || Number.isNaN(m)) return null
+  if (h < 0 || h > 23) return null
+  if (m < 0 || m > 59) return null
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
   return { hour: h, minute: m }
 }
 
@@ -37,6 +55,7 @@ function nextDelayMsForDailyTime(hour, minute) {
   target.setMinutes(minute)
   target.setSeconds(0)
   target.setMilliseconds(0)
+<<<<<<< HEAD
 
   if (target.getTime() <= now.getTime()) {
     target.setDate(target.getDate() + 1)
@@ -65,6 +84,18 @@ function buildFixedHourlyAlarms() {
 export default function AlarmScreen() {
 
   const [alarms, setAlarms] = useState([])
+=======
+  if (target.getTime() <= now.getTime()) {
+    target.setDate(target.getDate() + 1)
+  }
+  return target.getTime() - now.getTime()
+}
+
+export default function AlarmScreen() {
+
+  const [alarms, setAlarms] = useState([])
+  const [intervalInput, setIntervalInput] = useState('')
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
   const [timeInput, setTimeInput] = useState('')
 
   const [ringVisible, setRingVisible] = useState(false)
@@ -76,19 +107,28 @@ export default function AlarmScreen() {
   const isWeb = useMemo(() => Platform.OS === 'web', [])
 
   useEffect(() => {
+<<<<<<< HEAD
     loadOrCreate()
+=======
+    loadAlarms()
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
     return () => {
       clearAllTimers()
     }
   }, [])
 
   useEffect(() => {
+<<<<<<< HEAD
     AsyncStorage.setItem('alarms_fixed', JSON.stringify(alarms))
+=======
+    AsyncStorage.setItem('alarms', JSON.stringify(alarms))
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
     if (isWeb) {
       resyncWebTimers(alarms)
     }
   }, [alarms])
 
+<<<<<<< HEAD
   const loadOrCreate = async () => {
     const stored = await AsyncStorage.getItem('alarms_fixed')
     if (stored) {
@@ -101,6 +141,26 @@ export default function AlarmScreen() {
 
   const restoreDefaults = () => {
     setAlarms(buildFixedHourlyAlarms())
+=======
+  const loadAlarms = async () => {
+    const stored = await AsyncStorage.getItem('alarms')
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      setAlarms(parsed)
+    }
+  }
+
+  const clearAllTimers = () => {
+    const keys = Object.keys(timersRef.current)
+    keys.forEach((k) => {
+      const t = timersRef.current[k]
+      if (!t) return
+      if (t.type === 'interval') clearInterval(t.handle)
+      if (t.type === 'timeout') clearTimeout(t.handle)
+      timersRef.current[k] = null
+      delete timersRef.current[k]
+    })
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
   }
 
   const showRing = (title, body) => {
@@ -109,6 +169,7 @@ export default function AlarmScreen() {
     setRingVisible(true)
   }
 
+<<<<<<< HEAD
   const clearAllTimers = () => {
     const keys = Object.keys(timersRef.current)
     keys.forEach((k) => {
@@ -154,10 +215,68 @@ export default function AlarmScreen() {
     Object.keys(timersRef.current).forEach((k) => {
       if (!nextKeys.has(k)) {
         unscheduleWebAlarm(k)
+=======
+  const scheduleWebAlarm = (alarm) => {
+    if (!alarm.active) return
+
+    if (alarm.type === 'interval') {
+      const minutes = alarm.minutes
+      if (!minutes || minutes <= 0) return
+
+      const handle = setInterval(() => {
+        showRing('Hora de beber água 💧', `Alarme: a cada ${minutes} min`)
+      }, minutes * 60 * 1000)
+
+      timersRef.current[alarm.id] = {
+        type: 'interval',
+        handle: handle
+      }
+
+      return
+    }
+
+    if (alarm.type === 'specific') {
+      const { hour, minute } = alarm
+      if (hour === undefined || minute === undefined) return
+
+      const scheduleNext = () => {
+        const delay = nextDelayMsForDailyTime(hour, minute)
+        const handle = setTimeout(() => {
+          showRing('Hora de beber água 💧', `Alarme: ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`)
+          scheduleNext()
+        }, delay)
+
+        timersRef.current[alarm.id] = {
+          type: 'timeout',
+          handle: handle
+        }
+      }
+
+      scheduleNext()
+    }
+  }
+
+  const unscheduleWebAlarm = (alarmId) => {
+    const t = timersRef.current[alarmId]
+    if (!t) return
+    if (t.type === 'interval') clearInterval(t.handle)
+    if (t.type === 'timeout') clearTimeout(t.handle)
+    timersRef.current[alarmId] = null
+    delete timersRef.current[alarmId]
+  }
+
+  const resyncWebTimers = (nextAlarms) => {
+    const nextIds = new Set(nextAlarms.map(a => a.id))
+
+    Object.keys(timersRef.current).forEach((id) => {
+      if (!nextIds.has(id)) {
+        unscheduleWebAlarm(id)
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
       }
     })
 
     nextAlarms.forEach((a) => {
+<<<<<<< HEAD
       const already = timersRef.current[a.key]
       if (a.active && !already) scheduleWebAlarm(a)
       if (!a.active && already) unscheduleWebAlarm(a.key)
@@ -176,10 +295,49 @@ export default function AlarmScreen() {
       trigger: {
         hour: alarm.hour,
         minute: alarm.minute,
+=======
+      const already = timersRef.current[a.id]
+      if (a.active && !already) scheduleWebAlarm(a)
+      if (!a.active && already) unscheduleWebAlarm(a.id)
+    })
+  }
+
+  const addIntervalAlarm = async () => {
+    const minutes = parseInt(intervalInput)
+    if (!minutes || minutes <= 0) return
+
+    if (isWeb) {
+      const id = Date.now().toString()
+
+      const newAlarm = {
+        id: id,
+        type: 'interval',
+        label: `${minutes} min`,
+        active: true,
+        minutes: minutes
+      }
+
+      setAlarms([newAlarm, ...alarms])
+      setIntervalInput('')
+      return
+    }
+
+    const ok = await requestPermissionNative()
+    if (!ok) return
+
+    const notifId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Hora de beber água 💧',
+        body: `Lembrete a cada ${minutes} minutos`
+      },
+      trigger: {
+        seconds: minutes * 60,
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
         repeats: true
       }
     })
 
+<<<<<<< HEAD
     return id
   }
 
@@ -267,6 +425,37 @@ export default function AlarmScreen() {
         active: true,
         hour: parsed.hour,
         minute: parsed.minute
+=======
+    const newAlarm = {
+      id: notifId,
+      type: 'interval',
+      label: `${minutes} min`,
+      active: true,
+      minutes: minutes
+    }
+
+    setAlarms([newAlarm, ...alarms])
+    setIntervalInput('')
+  }
+
+  const addSpecificTimeAlarm = async () => {
+    const parsed = parseTimeLabel(timeInput)
+    if (!parsed) return
+
+    const hour = parsed.hour
+    const minute = parsed.minute
+
+    if (isWeb) {
+      const id = Date.now().toString()
+
+      const newAlarm = {
+        id: id,
+        type: 'specific',
+        label: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+        active: true,
+        hour: hour,
+        minute: minute
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
       }
 
       setAlarms([newAlarm, ...alarms])
@@ -280,16 +469,25 @@ export default function AlarmScreen() {
     const notifId = await Notifications.scheduleNotificationAsync({
       content: {
         title: 'Hora de beber água 💧',
+<<<<<<< HEAD
         body: `Alarme: ${label}`
       },
       trigger: {
         hour: parsed.hour,
         minute: parsed.minute,
+=======
+        body: `Lembrete das ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`
+      },
+      trigger: {
+        hour: hour,
+        minute: minute,
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
         repeats: true
       }
     })
 
     const newAlarm = {
+<<<<<<< HEAD
       key: key,
       notifId: notifId,
       type: 'custom',
@@ -297,12 +495,128 @@ export default function AlarmScreen() {
       active: true,
       hour: parsed.hour,
       minute: parsed.minute
+=======
+      id: notifId,
+      type: 'specific',
+      label: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+      active: true,
+      hour: hour,
+      minute: minute
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
     }
 
     setAlarms([newAlarm, ...alarms])
     setTimeInput('')
   }
 
+<<<<<<< HEAD
+=======
+  const toggleAlarm = async (alarm) => {
+    if (isWeb) {
+      if (alarm.active) {
+        unscheduleWebAlarm(alarm.id)
+      } else {
+        scheduleWebAlarm(alarm)
+      }
+
+      setAlarms(
+        alarms.map(a =>
+          a.id === alarm.id
+            ? { ...a, active: !a.active }
+            : a
+        )
+      )
+
+      return
+    }
+
+    if (alarm.active) {
+      await Notifications.cancelScheduledNotificationAsync(alarm.id)
+
+      setAlarms(
+        alarms.map(a =>
+          a.id === alarm.id
+            ? { ...a, active: false }
+            : a
+        )
+      )
+
+      return
+    }
+
+    const ok = await requestPermissionNative()
+    if (!ok) return
+
+    if (alarm.type === 'interval') {
+      const minutes = alarm.minutes || parseIntervalLabel(alarm.label)
+      if (!minutes) return
+
+      const newNotifId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Hora de beber água 💧',
+          body: `Lembrete a cada ${minutes} minutos`
+        },
+        trigger: {
+          seconds: minutes * 60,
+          repeats: true
+        }
+      })
+
+      setAlarms(
+        alarms.map(a =>
+          a.id === alarm.id
+            ? { ...a, id: newNotifId, active: true, minutes: minutes }
+            : a
+        )
+      )
+
+      return
+    }
+
+    if (alarm.type === 'specific') {
+      const t = alarm.hour !== undefined && alarm.minute !== undefined
+        ? { hour: alarm.hour, minute: alarm.minute }
+        : parseTimeLabel(alarm.label)
+
+      if (!t) return
+
+      const newNotifId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Hora de beber água 💧',
+          body: `Lembrete das ${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`
+        },
+        trigger: {
+          hour: t.hour,
+          minute: t.minute,
+          repeats: true
+        }
+      })
+
+      setAlarms(
+        alarms.map(a =>
+          a.id === alarm.id
+            ? { ...a, id: newNotifId, active: true, hour: t.hour, minute: t.minute }
+            : a
+        )
+      )
+    }
+  }
+
+  const removeAlarm = async (alarm) => {
+    if (isWeb) {
+      unscheduleWebAlarm(alarm.id)
+      setAlarms(alarms.filter(a => a.id !== alarm.id))
+      return
+    }
+
+    if (alarm.active) {
+      await Notifications.cancelScheduledNotificationAsync(alarm.id)
+    }
+
+    setAlarms(alarms.filter(a => a.id !== alarm.id))
+  }
+
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
   return (
     <View style={styles.page}>
       <Modal
@@ -326,6 +640,7 @@ export default function AlarmScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.card}>
           <Text style={styles.title}>Alarmes</Text>
+<<<<<<< HEAD
           <Text style={styles.subtitle}>Fixos de 08:00 até 20:00 (1h em 1h) + seus horários</Text>
 
           <Text style={styles.label}>Adicionar horário (HH:MM)</Text>
@@ -333,20 +648,51 @@ export default function AlarmScreen() {
           <View style={styles.row}>
             <TextInput
               placeholder="Ex: 07:30"
+=======
+
+          <Text style={styles.label}>Intervalo (min)</Text>
+
+          <View style={styles.row}>
+            <TextInput
+              placeholder="Ex: 60"
+              keyboardType="numeric"
+              value={intervalInput}
+              onChangeText={setIntervalInput}
+              style={styles.input}
+            />
+
+            <TouchableOpacity style={styles.button} onPress={addIntervalAlarm}>
+              <Text style={styles.buttonText}>Adicionar</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.label}>Horário (HH:MM)</Text>
+
+          <View style={styles.row}>
+            <TextInput
+              placeholder="Ex: 10:30"
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
               value={timeInput}
               onChangeText={setTimeInput}
               style={styles.input}
             />
 
+<<<<<<< HEAD
             <TouchableOpacity style={styles.button} onPress={addCustomAlarm}>
+=======
+            <TouchableOpacity style={styles.button} onPress={addSpecificTimeAlarm}>
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
               <Text style={styles.buttonText}>Adicionar</Text>
             </TouchableOpacity>
           </View>
 
+<<<<<<< HEAD
           <TouchableOpacity style={styles.secondaryBtn} onPress={restoreDefaults}>
             <Text style={styles.secondaryBtnText}>Restaurar alarmes padrão (08–20)</Text>
           </TouchableOpacity>
 
+=======
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
           {isWeb ? (
             <Text style={styles.webHint}>
               No navegador, o alarme aparece como popup enquanto a aba estiver aberta.
@@ -358,6 +704,7 @@ export default function AlarmScreen() {
           <Text style={styles.sectionTitle}>Seus alarmes</Text>
 
           {alarms.length === 0 ? (
+<<<<<<< HEAD
             <Text style={styles.empty}>Você removeu todos os alarmes.</Text>
           ) : (
             alarms.map(item => (
@@ -366,17 +713,34 @@ export default function AlarmScreen() {
                   <Text style={styles.alarmTitle}>{item.label}</Text>
                   <Text style={styles.alarmSub}>
                     {item.type === 'fixed' ? 'Fixo' : 'Personalizado'} • {item.active ? 'Ativo' : 'Inativo'}
+=======
+            <Text style={styles.empty}>Nenhum alarme ainda.</Text>
+          ) : (
+            alarms.map(item => (
+              <View key={item.id} style={styles.alarmRow}>
+                <TouchableOpacity style={styles.alarmLeft} onPress={() => toggleAlarm(item)}>
+                  <Text style={styles.alarmTitle}>{item.label}</Text>
+                  <Text style={styles.alarmSub}>
+                    {item.type === 'interval' ? 'Intervalo' : 'Horário'} • {item.active ? 'Ativo' : 'Inativo'}
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.removeButton} onPress={() => removeAlarm(item)}>
+<<<<<<< HEAD
                   <Text style={styles.removeText}>Deletar</Text>
+=======
+                  <Text style={styles.removeText}>X</Text>
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
                 </TouchableOpacity>
               </View>
             ))
           )}
         </View>
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
       </ScrollView>
     </View>
   )
@@ -406,6 +770,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '900',
+<<<<<<< HEAD
     marginBottom: 6,
     color: '#0B3B3E'
   },
@@ -416,6 +781,14 @@ const styles = StyleSheet.create({
 
   label: {
     marginTop: 12,
+=======
+    marginBottom: 10,
+    color: '#0B3B3E'
+  },
+
+  label: {
+    marginTop: 10,
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
     fontWeight: '800',
     color: '#0B3B3E'
   },
@@ -448,6 +821,7 @@ const styles = StyleSheet.create({
     fontWeight: '900'
   },
 
+<<<<<<< HEAD
   secondaryBtn: {
     marginTop: 12,
     borderWidth: 1,
@@ -462,6 +836,8 @@ const styles = StyleSheet.create({
     fontWeight: '900'
   },
 
+=======
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
   webHint: {
     marginTop: 12,
     color: '#4B6B6E'
@@ -505,7 +881,11 @@ const styles = StyleSheet.create({
   },
 
   removeButton: {
+<<<<<<< HEAD
     width: 70,
+=======
+    width: 36,
+>>>>>>> 0dd971c885d83fd04c3fa843a415e97618f76ed2
     height: 36,
     borderRadius: 18,
     backgroundColor: '#EF4444',
